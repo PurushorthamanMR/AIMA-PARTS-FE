@@ -1,0 +1,45 @@
+.pos-payment-types {
+  background: #fff;
+  border: 1px solid #E9ECEF;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  flex-shrink: 0;
+}
+
+.pos-payment-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #343A40;
+  margin: 0 0 12px 0;
+  font-family: 'Inter', sans-serif;
+}
+
+.pos-payment-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pos-payment-btn {
+  padding: 10px 16px;
+  background: #F8F9FA;
+  border: 1px solid #E9ECEF;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pos-payment-btn:hover {
+  background: #E9ECEF;
+  color: #212529;
+}
+
+.pos-payment-btn.selected {
+  background: #343A40;
+  border-color: #343A40;
+  color: #fff;
+}

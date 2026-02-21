@@ -1,0 +1,147 @@
+.bill-print-page {
+  min-height: 100vh;
+  padding: 24px;
+  background: #F8F9FA;
+  font-family: 'Inter', sans-serif;
+}
+
+.bill-print-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.bill-back-btn,
+.bill-print-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bill-back-btn {
+  background: #fff;
+  border: 1px solid #E9ECEF;
+  color: #495057;
+}
+
+.bill-back-btn:hover {
+  background: #F8F9FA;
+}
+
+.bill-print-btn {
+  background: #2563EB;
+  border: none;
+  color: #fff;
+}
+
+.bill-print-btn:hover {
+  background: #1D4ED8;
+}
+
+.bill-content {
+  max-width: 400px;
+  margin: 0 auto;
+  background: #fff;
+  padding: 32px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.bill-header {
+  text-align: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #343A40;
+}
+
+.bill-header h1 {
+  margin: 0 0 4px 0;
+  font-size: 24px;
+  color: #343A40;
+}
+
+.bill-header p {
+  margin: 0;
+  font-size: 14px;
+  color: #6C757D;
+}
+
+.bill-info {
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #495057;
+}
+
+.bill-info p {
+  margin: 4px 0;
+}
+
+.bill-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.bill-table th,
+.bill-table td {
+  padding: 8px 0;
+  text-align: left;
+  border-bottom: 1px solid #E9ECEF;
+}
+
+.bill-table th {
+  font-weight: 600;
+  color: #495057;
+}
+
+.bill-totals {
+  padding-top: 12px;
+  border-top: 1px solid #E9ECEF;
+}
+
+.bill-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: #6C757D;
+}
+
+.bill-total-final {
+  font-size: 16px;
+  font-weight: 600;
+  color: #343A40;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #E9ECEF;
+}
+
+.bill-footer {
+  text-align: center;
+  margin-top: 24px;
+  padding-top: 16px;
+  font-size: 14px;
+  color: #6C757D;
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .bill-print-page {
+    padding: 0;
+    background: #fff;
+  }
+
+  .bill-content {
+    box-shadow: none;
+  }
+}
