@@ -1,0 +1,34 @@
+.pos-customer-select {
+  margin-bottom: 12px;
+}
+
+.pos-customer-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6C757D;
+  margin-bottom: 4px;
+  font-family: 'Inter', sans-serif;
+}
+
+.pos-customer-dropdown {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #E9ECEF;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  color: #343A40;
+  background: #fff;
+  cursor: pointer;
+}
+
+.pos-customer-dropdown:focus {
+  outline: none;
+  border-color: #2563EB;
+}
+
+.pos-customer-dropdown:disabled {
+  background: #F8F9FA;
+  cursor: not-allowed;
+}

@@ -17,6 +17,7 @@ function POSSidebar() {
 
   const clearAuthAndRedirect = () => {
     localStorage.removeItem('isAuthenticated')
+    localStorage.removeItem('userId')
     localStorage.removeItem('userRole')
     localStorage.removeItem('userFirstName')
     localStorage.removeItem('userLastName')

@@ -1,0 +1,29 @@
+.pos-payment-select {
+  margin-bottom: 12px;
+}
+
+.pos-payment-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #6C757D;
+  margin-bottom: 4px;
+  font-family: 'Inter', sans-serif;
+}
+
+.pos-payment-dropdown {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #E9ECEF;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'Inter', sans-serif;
+  color: #343A40;
+  background: #fff;
+  cursor: pointer;
+}
+
+.pos-payment-dropdown:focus {
+  outline: none;
+  border-color: #2563EB;
+}

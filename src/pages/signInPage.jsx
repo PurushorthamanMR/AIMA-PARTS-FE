@@ -30,6 +30,7 @@ function SignInPage() {
       const users = await getByEmailAddress(email.trim())
       const user = Array.isArray(users) && users.length > 0 ? users[0] : null
       const role = user?.userRoleDto?.userRole || 'USER'
+      localStorage.setItem('userId', user?.id ? String(user.id) : '')
       localStorage.setItem('userRole', role)
       localStorage.setItem('userFirstName', user?.firstName || 'User')
       localStorage.setItem('userLastName', user?.lastName || '')

@@ -14,6 +14,7 @@ import NewCustomer from './pages/NewCustomer'
 import UserList from './pages/UserList'
 import NewUser from './pages/NewUser'
 import POSPage from './pages/POSPage'
+import BillPrint from './pages/BillPrint'
 import DailyReport from './pages/DailyReport'
 import MonthlyReport from './pages/MonthlyReport'
 
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
       {
         path: '/pos',
         element: <POSPage />
+      },
+      {
+        path: '/pos/bill',
+        element: <BillPrint />
       },
       {
         path: '/dashboard',
