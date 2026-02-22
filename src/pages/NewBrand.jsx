@@ -1,26 +1,40 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { save as saveBrand } from '../api/brandApi'
 import '../styles/NewCategory.css'
 
 function NewBrand() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    brandName: '',
-    status: 'Active'
+    name: '',
+    isActive: true
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: name === 'isActive' ? value === 'true' : value
     }))
   }
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
-    console.log('Saving brand:', formData)
-    navigate('/brand')
+    setError('')
+    setLoading(true)
+    try {
+      await saveBrand({
+        name: formData.name,
+        isActive: formData.isActive
+      })
+      navigate('/brand')
+    } catch (err) {
+      setError(err.message || 'Failed to save brand')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -30,19 +44,19 @@ function NewBrand() {
           <h1 className="page-title">New Brand</h1>
           <p className="page-subtitle">Create new brand</p>
         </div>
-        <button className="back-btn" onClick={() => navigate('/brand')}>
+        <button type="button" className="back-btn" onClick={() => navigate('/brand')}>
           ← Back to Brand
         </button>
       </div>
 
       <form className="category-form" onSubmit={handleSave}>
         <div className="form-group">
-          <label htmlFor="brandName">Brand Name</label>
+          <label htmlFor="name">Brand Name *</label>
           <input
             type="text"
-            id="brandName"
-            name="brandName"
-            value={formData.brandName}
+            id="name"
+            name="name"
+            value={formData.name}
             onChange={handleInputChange}
             placeholder="Enter Brand Name"
             className="form-input"
@@ -51,25 +65,27 @@ function NewBrand() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="status">Status</label>
+          <label htmlFor="isActive">Status</label>
           <select
-            id="status"
-            name="status"
-            value={formData.status}
+            id="isActive"
+            name="isActive"
+            value={String(formData.isActive)}
             onChange={handleInputChange}
             className="form-select"
           >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
           </select>
         </div>
+
+        {error && <div className="form-error">{error}</div>}
 
         <div className="form-actions">
           <button type="button" className="cancel-btn" onClick={() => navigate('/brand')}>
             Cancel
           </button>
-          <button type="submit" className="save-btn">
-            Save Brand
+          <button type="submit" className="save-btn" disabled={loading}>
+            {loading ? 'Saving...' : 'Save Brand'}
           </button>
         </div>
       </form>

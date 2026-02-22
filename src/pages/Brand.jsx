@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -9,14 +9,46 @@ import {
   faPlus,
   faSearch,
   faSortUp,
-  faSortDown
+  faSortDown,
+  faToggleOn,
+  faToggleOff
 } from '@fortawesome/free-solid-svg-icons'
+import { getAll, updateStatus } from '../api/brandApi'
 import '../styles/Category.css'
 
 function Brand() {
   const navigate = useNavigate()
   const [activeStatus, setActiveStatus] = useState('Active')
   const [searchQuery, setSearchQuery] = useState('')
+  const [brands, setBrands] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const loadBrands = () => {
+    setLoading(true)
+    getAll()
+      .then((data) => setBrands(Array.isArray(data) ? data : data?.content || []))
+      .catch(() => setBrands([]))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadBrands()
+  }, [])
+
+  const filtered = brands.filter((b) => {
+    const matchStatus = activeStatus === 'Active' ? b.isActive : !b.isActive
+    const matchSearch = !searchQuery || (b.name || '').toLowerCase().includes(searchQuery.toLowerCase())
+    return matchStatus && matchSearch
+  })
+
+  const handleToggleStatus = async (id, current) => {
+    try {
+      await updateStatus(id, !current)
+      loadBrands()
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   return (
     <div className="category-container">
@@ -101,14 +133,37 @@ function Brand() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td colSpan="3" className="no-data">
-                <div className="no-data-content">
-                  <div className="no-data-icon">🏷️</div>
-                  <div className="no-data-text">No data</div>
-                </div>
-              </td>
-            </tr>
+            {loading ? (
+              <tr>
+                <td colSpan="3" className="no-data">Loading...</td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan="3" className="no-data">
+                  <div className="no-data-content">
+                    <div className="no-data-icon">🏷️</div>
+                    <div className="no-data-text">No data</div>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              filtered.map((b) => (
+                <tr key={b.id}>
+                  <td>{b.name}</td>
+                  <td>{b.isActive ? 'Active' : 'Inactive'}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="action-icon-btn"
+                      onClick={() => handleToggleStatus(b.id, b.isActive)}
+                      title={b.isActive ? 'Deactivate' : 'Activate'}
+                    >
+                      <FontAwesomeIcon icon={b.isActive ? faToggleOn : faToggleOff} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

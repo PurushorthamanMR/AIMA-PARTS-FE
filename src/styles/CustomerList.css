@@ -215,6 +215,19 @@
   font-family: 'Inter', sans-serif;
 }
 
+.action-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  color: #2563EB;
+  font-size: 18px;
+}
+
+.action-icon-btn:hover {
+  color: #1D4ED8;
+}
+
 .no-data {
   text-align: center;
   padding: 60px 20px !important;

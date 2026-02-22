@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { 
@@ -9,14 +9,48 @@ import {
   faPlus,
   faSearch,
   faSortUp,
-  faSortDown
+  faSortDown,
+  faToggleOn,
+  faToggleOff
 } from '@fortawesome/free-solid-svg-icons'
+import { getAllPage, updateStatus } from '../api/customerApi'
 import '../styles/CustomerList.css'
 
 function CustomerList() {
   const navigate = useNavigate()
   const [activeStatus, setActiveStatus] = useState('Active')
   const [searchQuery, setSearchQuery] = useState('')
+  const [customers, setCustomers] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const loadCustomers = () => {
+    setLoading(true)
+    getAllPage({ pageNumber: 1, pageSize: 100 })
+      .then((data) => setCustomers(Array.isArray(data) ? data : data?.content || []))
+      .catch(() => setCustomers([]))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadCustomers()
+  }, [])
+
+  const filtered = customers.filter((c) => {
+    const matchStatus = activeStatus === 'Active' ? c.isActive : !c.isActive
+    const matchSearch = !searchQuery || 
+      (c.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.mobileNumber || '').includes(searchQuery)
+    return matchStatus && matchSearch
+  })
+
+  const handleToggleStatus = async (id, current) => {
+    try {
+      await updateStatus(id, !current)
+      loadCustomers()
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   return (
     <div className="customer-list-container">
@@ -111,14 +145,38 @@ function CustomerList() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td colSpan="4" className="no-data">
-                <div className="no-data-content">
-                  <div className="no-data-icon">📦</div>
-                  <div className="no-data-text">No data</div>
-                </div>
-              </td>
-            </tr>
+            {loading ? (
+              <tr>
+                <td colSpan="4" className="no-data">Loading...</td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan="4" className="no-data">
+                  <div className="no-data-content">
+                    <div className="no-data-icon">📦</div>
+                    <div className="no-data-text">No data</div>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              filtered.map((c) => (
+                <tr key={c.id}>
+                  <td>{c.name}</td>
+                  <td>{c.mobileNumber}</td>
+                  <td>{c.isActive ? 'Active' : 'Inactive'}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="action-icon-btn"
+                      onClick={() => handleToggleStatus(c.id, c.isActive)}
+                      title={c.isActive ? 'Deactivate' : 'Activate'}
+                    >
+                      <FontAwesomeIcon icon={c.isActive ? faToggleOn : faToggleOff} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
