@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { 
   faFilePdf, 
@@ -8,14 +8,56 @@ import {
   faPlus,
   faSearch,
   faSortUp,
-  faSortDown
+  faSortDown,
+  faToggleOn,
+  faToggleOff
 } from '@fortawesome/free-solid-svg-icons'
+import { getAllPage, updateStatus } from '../api/productApi'
+import { getAll as getCategories } from '../api/productCategoryApi'
+import { getAll as getBrands } from '../api/brandApi'
 import '../styles/ProductList.css'
 
 function ProductList({ onAddNew }) {
   const [activeTab, setActiveTab] = useState('Active')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
+  const [brands, setBrands] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const loadProducts = () => {
+    setLoading(true)
+    getAllPage({ pageNumber: 1, pageSize: 100 })
+      .then((data) => setProducts(Array.isArray(data) ? data : data?.content || []))
+      .catch(() => setProducts([]))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadProducts()
+    getCategories().then((d) => setCategories(Array.isArray(d) ? d : d?.content || [])).catch(() => setCategories([]))
+    getBrands().then((d) => setBrands(Array.isArray(d) ? d : d?.content || [])).catch(() => setBrands([]))
+  }, [])
+
+  const getCategoryName = (id) => categories.find((c) => c.id === id)?.name || id
+  const getBrandName = (id) => brands.find((b) => b.id === id)?.name || id
+
+  const filtered = products.filter((p) => {
+    const matchStatus = activeTab === 'Active' ? p.isActive : !p.isActive
+    const matchSearch = !searchQuery || (p.name || '').toLowerCase().includes(searchQuery.toLowerCase())
+    const matchCat = !selectedCategory || p.productCategoryId === parseInt(selectedCategory, 10)
+    return matchStatus && matchSearch && matchCat
+  })
+
+  const handleToggleStatus = async (id, current) => {
+    try {
+      await updateStatus(id, !current)
+      loadProducts()
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   return (
     <div className="product-list-container">
@@ -87,8 +129,9 @@ function ProductList({ onAddNew }) {
           onChange={(e) => setSelectedCategory(e.target.value)}
         >
           <option value="">Select Category</option>
-          <option value="category1">Category 1</option>
-          <option value="category2">Category 2</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>{c.name}</option>
+          ))}
         </select>
       </div>
 
@@ -98,14 +141,14 @@ function ProductList({ onAddNew }) {
           <thead>
             <tr>
               <th>
-                Product Name
+                Name
                 <span className="sort-icons">
                   <FontAwesomeIcon icon={faSortUp} />
                   <FontAwesomeIcon icon={faSortDown} />
                 </span>
               </th>
               <th>
-                Bar Code
+                Brand
                 <span className="sort-icons">
                   <FontAwesomeIcon icon={faSortUp} />
                   <FontAwesomeIcon icon={faSortDown} />
@@ -119,14 +162,7 @@ function ProductList({ onAddNew }) {
                 </span>
               </th>
               <th>
-                Purchase Price
-                <span className="sort-icons">
-                  <FontAwesomeIcon icon={faSortUp} />
-                  <FontAwesomeIcon icon={faSortDown} />
-                </span>
-              </th>
-              <th>
-                Price Per Unit
+                Price
                 <span className="sort-icons">
                   <FontAwesomeIcon icon={faSortUp} />
                   <FontAwesomeIcon icon={faSortDown} />
@@ -157,14 +193,42 @@ function ProductList({ onAddNew }) {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td colSpan="9" className="no-data">
-                <div className="no-data-content">
-                  <div className="no-data-icon">📦</div>
-                  <div className="no-data-text">No data</div>
-                </div>
-              </td>
-            </tr>
+            {loading ? (
+              <tr>
+                <td colSpan="8" className="no-data">Loading...</td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan="8" className="no-data">
+                  <div className="no-data-content">
+                    <div className="no-data-icon">📦</div>
+                    <div className="no-data-text">No data</div>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              filtered.map((p) => (
+                <tr key={p.id}>
+                  <td>{p.name}</td>
+                  <td>{getBrandName(p.brandId)}</td>
+                  <td>{getCategoryName(p.productCategoryId)}</td>
+                  <td>{p.price != null ? Number(p.price).toFixed(2) : '-'}</td>
+                  <td>{p.quantity ?? '-'}</td>
+                  <td>{p.lowStock ?? '-'}</td>
+                  <td>{p.isActive ? 'Active' : 'Inactive'}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="action-icon-btn"
+                      onClick={() => handleToggleStatus(p.id, p.isActive)}
+                      title={p.isActive ? 'Deactivate' : 'Activate'}
+                    >
+                      <FontAwesomeIcon icon={p.isActive ? faToggleOn : faToggleOff} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

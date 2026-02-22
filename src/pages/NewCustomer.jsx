@@ -1,27 +1,42 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { save as saveCustomer } from '../api/customerApi'
 import '../styles/NewCustomer.css'
 
 function NewCustomer() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    customerName: '',
+    name: '',
     mobileNumber: '',
-    status: 'Active'
+    isActive: true
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: name === 'isActive' ? value === 'true' : value
     }))
   }
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
-    console.log('Saving customer:', formData)
-    navigate('/customers')
+    setError('')
+    setLoading(true)
+    try {
+      await saveCustomer({
+        name: formData.name,
+        mobileNumber: formData.mobileNumber,
+        isActive: formData.isActive
+      })
+      navigate('/customers')
+    } catch (err) {
+      setError(err.message || 'Failed to save customer')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -31,19 +46,19 @@ function NewCustomer() {
           <h1 className="page-title">New Customer</h1>
           <p className="page-subtitle">Create new customer</p>
         </div>
-        <button className="back-btn" onClick={() => navigate('/customers')}>
+        <button type="button" className="back-btn" onClick={() => navigate('/customers')}>
           ← Back to Customer
         </button>
       </div>
 
       <form className="customer-form" onSubmit={handleSave}>
         <div className="form-group">
-          <label htmlFor="customerName">Customer Name</label>
+          <label htmlFor="name">Name *</label>
           <input
             type="text"
-            id="customerName"
-            name="customerName"
-            value={formData.customerName}
+            id="name"
+            name="name"
+            value={formData.name}
             onChange={handleInputChange}
             placeholder="Enter Customer Name"
             className="form-input"
@@ -52,7 +67,7 @@ function NewCustomer() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="mobileNumber">Mobile Number</label>
+          <label htmlFor="mobileNumber">Mobile Number *</label>
           <input
             type="tel"
             id="mobileNumber"
@@ -66,25 +81,27 @@ function NewCustomer() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="status">Status</label>
+          <label htmlFor="isActive">Status</label>
           <select
-            id="status"
-            name="status"
-            value={formData.status}
+            id="isActive"
+            name="isActive"
+            value={String(formData.isActive)}
             onChange={handleInputChange}
             className="form-select"
           >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
           </select>
         </div>
+
+        {error && <div className="form-error">{error}</div>}
 
         <div className="form-actions">
           <button type="button" className="cancel-btn" onClick={() => navigate('/customers')}>
             Cancel
           </button>
-          <button type="submit" className="save-btn">
-            Save Customer
+          <button type="submit" className="save-btn" disabled={loading}>
+            {loading ? 'Saving...' : 'Save Customer'}
           </button>
         </div>
       </form>

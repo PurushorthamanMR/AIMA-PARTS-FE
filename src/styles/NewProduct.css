@@ -230,6 +230,20 @@
   background-color: #1D4ED8;
 }
 
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-error {
+  padding: 12px;
+  background-color: #FEE2E2;
+  color: #DC2626;
+  border-radius: 6px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .section-content {

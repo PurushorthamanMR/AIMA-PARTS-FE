@@ -1,30 +1,59 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { register } from '../api/userApi'
+import { getAll as getRoles } from '../api/userRoleApi'
 import '../styles/NewUser.css'
 
 function NewUser() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
+    firstName: '',
+    lastName: '',
+    password: '',
     address: '',
-    role: '',
-    status: 'Active'
+    emailAddress: '',
+    mobileNumber: '',
+    isActive: true,
+    userRoleId: ''
   })
+  const [roles, setRoles] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    getRoles().then(setRoles).catch(() => setRoles([]))
+  }, [])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: name === 'userRoleId' ? (value ? parseInt(value, 10) : '') : value,
+      ...(name === 'isActive' && { isActive: value === 'true' })
     }))
   }
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
-    console.log('Saving user:', formData)
-    navigate('/users')
+    setError('')
+    setLoading(true)
+    try {
+      await register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        password: formData.password,
+        address: formData.address || undefined,
+        emailAddress: formData.emailAddress,
+        mobileNumber: formData.mobileNumber || undefined,
+        isActive: formData.isActive,
+        userRoleId: formData.userRoleId
+      })
+      navigate('/users')
+    } catch (err) {
+      setError(err.message || 'Failed to register user')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -34,51 +63,78 @@ function NewUser() {
           <h1 className="page-title">New User</h1>
           <p className="page-subtitle">Create new user</p>
         </div>
-        <button className="back-btn" onClick={() => navigate('/users')}>
+        <button type="button" className="back-btn" onClick={() => navigate('/users')}>
           ← Back to User
         </button>
       </div>
 
       <form className="user-form" onSubmit={handleSave}>
         <div className="form-group">
-          <label htmlFor="name">Name</label>
+          <label htmlFor="firstName">First Name *</label>
           <input
             type="text"
-            id="name"
-            name="name"
-            value={formData.name}
+            id="firstName"
+            name="firstName"
+            value={formData.firstName}
             onChange={handleInputChange}
-            placeholder="Enter Name"
+            placeholder="Enter First Name"
             className="form-input"
             required
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="phone">Phone</label>
+          <label htmlFor="lastName">Last Name *</label>
           <input
-            type="tel"
-            id="phone"
-            name="phone"
-            value={formData.phone}
+            type="text"
+            id="lastName"
+            name="lastName"
+            value={formData.lastName}
             onChange={handleInputChange}
-            placeholder="Enter Phone"
+            placeholder="Enter Last Name"
             className="form-input"
             required
           />
         </div>
 
         <div className="form-group">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="emailAddress">Email Address *</label>
           <input
             type="email"
-            id="email"
-            name="email"
-            value={formData.email}
+            id="emailAddress"
+            name="emailAddress"
+            value={formData.emailAddress}
             onChange={handleInputChange}
-            placeholder="Enter Email"
+            placeholder="Enter Email Address"
             className="form-input"
             required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="password">Password *</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            value={formData.password}
+            onChange={handleInputChange}
+            placeholder="Enter Password"
+            className="form-input"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="mobileNumber">Mobile Number</label>
+          <input
+            type="tel"
+            id="mobileNumber"
+            name="mobileNumber"
+            value={formData.mobileNumber}
+            onChange={handleInputChange}
+            placeholder="Enter Mobile Number"
+            className="form-input"
           />
         </div>
 
@@ -96,42 +152,46 @@ function NewUser() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="role">Role</label>
+          <label htmlFor="userRoleId">User Role *</label>
           <select
-            id="role"
-            name="role"
-            value={formData.role}
+            id="userRoleId"
+            name="userRoleId"
+            value={formData.userRoleId}
             onChange={handleInputChange}
             className="form-select"
             required
           >
             <option value="">Select Role</option>
-            <option value="admin">Admin</option>
-            <option value="manager">Manager</option>
-            <option value="staff">Staff</option>
+            {roles.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.userRole || r.name}
+              </option>
+            ))}
           </select>
         </div>
 
         <div className="form-group">
-          <label htmlFor="status">Status</label>
+          <label htmlFor="isActive">Status</label>
           <select
-            id="status"
-            name="status"
-            value={formData.status}
+            id="isActive"
+            name="isActive"
+            value={String(formData.isActive)}
             onChange={handleInputChange}
             className="form-select"
           >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
           </select>
         </div>
+
+        {error && <div className="form-error">{error}</div>}
 
         <div className="form-actions">
           <button type="button" className="cancel-btn" onClick={() => navigate('/users')}>
             Cancel
           </button>
-          <button type="submit" className="save-btn">
-            Save User
+          <button type="submit" className="save-btn" disabled={loading}>
+            {loading ? 'Saving...' : 'Save User'}
           </button>
         </div>
       </form>

@@ -1,26 +1,40 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { save as saveCategory } from '../api/productCategoryApi'
 import '../styles/NewCategory.css'
 
 function NewCategory() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState({
-    categoryName: '',
-    status: 'Active'
+    name: '',
+    isActive: true
   })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: name === 'isActive' ? value === 'true' : value
     }))
   }
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
-    console.log('Saving category:', formData)
-    navigate('/category')
+    setError('')
+    setLoading(true)
+    try {
+      await saveCategory({
+        name: formData.name,
+        isActive: formData.isActive
+      })
+      navigate('/category')
+    } catch (err) {
+      setError(err.message || 'Failed to save category')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -28,21 +42,21 @@ function NewCategory() {
       <div className="page-header">
         <div>
           <h1 className="page-title">New Category</h1>
-          <p className="page-subtitle">Create new category</p>
+          <p className="page-subtitle">Create new product category</p>
         </div>
-        <button className="back-btn" onClick={() => navigate('/category')}>
+        <button type="button" className="back-btn" onClick={() => navigate('/category')}>
           ← Back to Category
         </button>
       </div>
 
       <form className="category-form" onSubmit={handleSave}>
         <div className="form-group">
-          <label htmlFor="categoryName">Category Name</label>
+          <label htmlFor="name">Category Name *</label>
           <input
             type="text"
-            id="categoryName"
-            name="categoryName"
-            value={formData.categoryName}
+            id="name"
+            name="name"
+            value={formData.name}
             onChange={handleInputChange}
             placeholder="Enter Category Name"
             className="form-input"
@@ -51,25 +65,27 @@ function NewCategory() {
         </div>
 
         <div className="form-group">
-          <label htmlFor="status">Status</label>
+          <label htmlFor="isActive">Status</label>
           <select
-            id="status"
-            name="status"
-            value={formData.status}
+            id="isActive"
+            name="isActive"
+            value={String(formData.isActive)}
             onChange={handleInputChange}
             className="form-select"
           >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
+            <option value="true">Active</option>
+            <option value="false">Inactive</option>
           </select>
         </div>
+
+        {error && <div className="form-error">{error}</div>}
 
         <div className="form-actions">
           <button type="button" className="cancel-btn" onClick={() => navigate('/category')}>
             Cancel
           </button>
-          <button type="submit" className="save-btn">
-            Save Category
+          <button type="submit" className="save-btn" disabled={loading}>
+            {loading ? 'Saving...' : 'Save Category'}
           </button>
         </div>
       </form>

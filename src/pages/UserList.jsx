@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { 
@@ -9,8 +9,12 @@ import {
   faPlus,
   faSearch,
   faSortUp,
-  faSortDown
+  faSortDown,
+  faToggleOn,
+  faToggleOff
 } from '@fortawesome/free-solid-svg-icons'
+import { getAllPage, updateStatus } from '../api/userApi'
+import { getAll as getRoles } from '../api/userRoleApi'
 import '../styles/UserList.css'
 
 function UserList() {
@@ -18,6 +22,43 @@ function UserList() {
   const [activeStatus, setActiveStatus] = useState('Active')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedRole, setSelectedRole] = useState('')
+  const [users, setUsers] = useState([])
+  const [roles, setRoles] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const loadUsers = () => {
+    setLoading(true)
+    getAllPage({ pageNumber: 1, pageSize: 100 })
+      .then((data) => setUsers(Array.isArray(data) ? data : data?.content || []))
+      .catch(() => setUsers([]))
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    loadUsers()
+    getRoles().then((d) => setRoles(Array.isArray(d) ? d : d?.content || [])).catch(() => setRoles([]))
+  }, [])
+
+  const getRoleName = (id) => roles.find((r) => r.id === id)?.userRole || id
+
+  const filtered = users.filter((u) => {
+    const matchStatus = activeStatus === 'Active' ? u.isActive : !u.isActive
+    const matchSearch = !searchQuery || 
+      (u.firstName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (u.lastName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (u.emailAddress || '').toLowerCase().includes(searchQuery.toLowerCase())
+    const matchRole = !selectedRole || u.userRoleId === parseInt(selectedRole, 10)
+    return matchStatus && matchSearch && matchRole
+  })
+
+  const handleToggleStatus = async (id, current) => {
+    try {
+      await updateStatus(id, !current)
+      loadUsers()
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   return (
     <div className="user-list-container">
@@ -86,9 +127,9 @@ function UserList() {
           onChange={(e) => setSelectedRole(e.target.value)}
         >
           <option value="">Select Role</option>
-          <option value="admin">Admin</option>
-          <option value="manager">Manager</option>
-          <option value="staff">Staff</option>
+          {roles.map((r) => (
+            <option key={r.id} value={r.id}>{r.userRole}</option>
+          ))}
         </select>
       </div>
 
@@ -98,21 +139,28 @@ function UserList() {
           <thead>
             <tr>
               <th>
-                Name
+                First Name
                 <span className="sort-icons">
                   <FontAwesomeIcon icon={faSortUp} />
                   <FontAwesomeIcon icon={faSortDown} />
                 </span>
               </th>
               <th>
-                Phone
+                Last Name
                 <span className="sort-icons">
                   <FontAwesomeIcon icon={faSortUp} />
                   <FontAwesomeIcon icon={faSortDown} />
                 </span>
               </th>
               <th>
-                Email
+                Email Address
+                <span className="sort-icons">
+                  <FontAwesomeIcon icon={faSortUp} />
+                  <FontAwesomeIcon icon={faSortDown} />
+                </span>
+              </th>
+              <th>
+                Mobile Number
                 <span className="sort-icons">
                   <FontAwesomeIcon icon={faSortUp} />
                   <FontAwesomeIcon icon={faSortDown} />
@@ -143,14 +191,42 @@ function UserList() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td colSpan="7" className="no-data">
-                <div className="no-data-content">
-                  <div className="no-data-icon">📦</div>
-                  <div className="no-data-text">No data</div>
-                </div>
-              </td>
-            </tr>
+            {loading ? (
+              <tr>
+                <td colSpan="8" className="no-data">Loading...</td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td colSpan="8" className="no-data">
+                  <div className="no-data-content">
+                    <div className="no-data-icon">📦</div>
+                    <div className="no-data-text">No data</div>
+                  </div>
+                </td>
+              </tr>
+            ) : (
+              filtered.map((u) => (
+                <tr key={u.id}>
+                  <td>{u.firstName}</td>
+                  <td>{u.lastName}</td>
+                  <td>{u.emailAddress}</td>
+                  <td>{u.mobileNumber || '-'}</td>
+                  <td>{u.address || '-'}</td>
+                  <td>{getRoleName(u.userRoleId)}</td>
+                  <td>{u.isActive ? 'Active' : 'Inactive'}</td>
+                  <td>
+                    <button
+                      type="button"
+                      className="action-icon-btn"
+                      onClick={() => handleToggleStatus(u.id, u.isActive)}
+                      title={u.isActive ? 'Deactivate' : 'Activate'}
+                    >
+                      <FontAwesomeIcon icon={u.isActive ? faToggleOn : faToggleOff} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
