@@ -1,18 +1,17 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPen } from '@fortawesome/free-solid-svg-icons'
 import '../styles/POSCardSection.css'
 
 function POSCardSection({
   cartItems,
   onRemoveItem,
   onUpdateQuantity,
+  onEditItem,
   onAdvancePayment,
   onFinalPayment
 }) {
   const subtotal = cartItems.reduce((sum, item) => sum + (item.pricePerUnit || 0) * (item.quantity || 1), 0)
-  const taxAmount = cartItems.reduce((sum, item) => {
-    const taxPct = (item.taxDto?.taxPercentage || 0) / 100
-    return sum + (item.pricePerUnit || 0) * (item.quantity || 1) * taxPct
-  }, 0)
-  const total = subtotal + taxAmount
+  const total = subtotal
 
   const canAdvance = cartItems.length > 0
   const canFinal = cartItems.length > 0
@@ -38,7 +37,7 @@ function POSCardSection({
             <tbody>
               {cartItems.map((item, idx) => (
                 <tr key={`${item.id}-${idx}`}>
-                  <td className="pos-cart-name">{item.name}</td>
+                  <td className="pos-cart-name" title={item.name}>{(item.name || '').slice(0, 5)}</td>
                   <td className="pos-cart-qty">
                     {onUpdateQuantity ? (
                       <input
@@ -53,17 +52,19 @@ function POSCardSection({
                     )}
                   </td>
                   <td className="pos-cart-price">
-                    ₹{((item.pricePerUnit || 0) * (item.quantity || 1)).toFixed(2)}
+                    {((item.pricePerUnit || 0) * (item.quantity || 1)).toFixed(2)}
                   </td>
                   <td>
-                    <button
-                      type="button"
-                      className="pos-cart-remove"
-                      onClick={() => onRemoveItem(idx)}
-                      title="Remove"
-                    >
-                      ×
-                    </button>
+                    {onEditItem && (
+                      <button
+                        type="button"
+                        className="pos-cart-edit"
+                        onClick={() => onEditItem(idx)}
+                        title="Edit quantity or item"
+                      >
+                        <FontAwesomeIcon icon={faPen} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -73,17 +74,9 @@ function POSCardSection({
       </div>
       <div className="pos-card-footer">
         <div className="pos-card-totals">
-          <div className="pos-total-row">
-            <span>Subtotal</span>
-            <span>₹{subtotal.toFixed(2)}</span>
-          </div>
-          <div className="pos-total-row">
-            <span>Tax</span>
-            <span>₹{taxAmount.toFixed(2)}</span>
-          </div>
           <div className="pos-total-row pos-total-final">
             <span>Total</span>
-            <span>₹{total.toFixed(2)}</span>
+            <span>{total.toFixed(2)}</span>
           </div>
         </div>
         <button

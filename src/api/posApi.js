@@ -12,16 +12,11 @@ export async function getCategories() {
 }
 
 /**
- * GET /product/getByProductCategoryName - products by category
+ * GET /product/getAllByCategory - products by category id
  * Note: Search/filter by product name is done client-side
  */
-export async function getProductsByCategory(categoryName, pageNumber = 1, pageSize = 500) {
-  const params = new URLSearchParams({
-    categoryName,
-    pageNumber: String(pageNumber),
-    pageSize: String(pageSize)
-  })
-  const res = await fetch(`${BASE_URL}/product/getByProductCategoryName?${params}`, {
+export async function getProductsByCategory(productCategoryId) {
+  const res = await fetch(`${BASE_URL}/product/getAllByCategory?productCategoryId=${productCategoryId}`, {
     method: 'GET',
     headers: getAuthHeaders()
   })
@@ -51,10 +46,34 @@ export async function getCustomers() {
 }
 
 /**
- * POST /transaction/save - save transaction
+ * POST /transaction/savePending - save advance (pending) payment
  */
-export async function saveTransaction(payload) {
-  const res = await fetch(`${BASE_URL}/transaction/save`, {
+export async function savePending(payload) {
+  const res = await fetch(`${BASE_URL}/transaction/savePending`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload)
+  })
+  return handleResponse(res)
+}
+
+/**
+ * POST /transaction/saveComplete - save final (complete) payment
+ */
+export async function saveComplete(payload) {
+  const res = await fetch(`${BASE_URL}/transaction/saveComplete`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload)
+  })
+  return handleResponse(res)
+}
+
+/**
+ * POST /transaction/saveFinal - complete a pending payment (change to final)
+ */
+export async function saveFinal(payload) {
+  const res = await fetch(`${BASE_URL}/transaction/saveFinal`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(payload)

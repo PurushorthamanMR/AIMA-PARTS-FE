@@ -20,7 +20,7 @@ function AdvancePaymentModal({
   const [searchQuery, setSearchQuery] = useState('')
   const [customers, setCustomers] = useState([])
   const [selectedCustomer, setSelectedCustomer] = useState(null)
-  const [newCustomer, setNewCustomer] = useState({ name: '', vehicleNumber: '', mobileNumber: '' })
+  const [newCustomer, setNewCustomer] = useState({ name: '', mobileNumber: '' })
   const [loading, setLoading] = useState(false)
   const PAGE_SIZE = 5
   const [page, setPage] = useState(1)
@@ -33,7 +33,7 @@ function AdvancePaymentModal({
       setCustomerType('existing')
       setSearchQuery('')
       setSelectedCustomer(null)
-      setNewCustomer({ name: '', vehicleNumber: '', mobileNumber: '' })
+      setNewCustomer({ name: '', mobileNumber: '' })
     }
   }, [isOpen])
 
@@ -127,9 +127,9 @@ function AdvancePaymentModal({
                 }}
               >
                 <option value="">Select Payment Method</option>
-                {paymentMethods.map((pm) => (
+                {(Array.isArray(paymentMethods) ? paymentMethods : []).map((pm) => (
                   <option key={pm.id} value={pm.id}>
-                    {pm.type}
+                    {pm.type ?? pm.name ?? ''}
                   </option>
                 ))}
               </select>
@@ -194,7 +194,6 @@ function AdvancePaymentModal({
                     <thead>
                       <tr>
                         <th>Name</th>
-                        <th>Vehicle Number</th>
                         <th>Mobile Number</th>
                         <th></th>
                       </tr>
@@ -202,13 +201,13 @@ function AdvancePaymentModal({
                     <tbody>
                       {loading ? (
                         <tr>
-                          <td colSpan="4" className="advance-loading">
+                          <td colSpan="3" className="advance-loading">
                             Loading...
                           </td>
                         </tr>
                       ) : customers.length === 0 ? (
                         <tr>
-                          <td colSpan="4" className="advance-empty">
+                          <td colSpan="3" className="advance-empty">
                             No customers found
                           </td>
                         </tr>
@@ -218,7 +217,6 @@ function AdvancePaymentModal({
                           .map((c) => (
                           <tr key={c.id}>
                             <td>{c.name}</td>
-                            <td>{c.vehicleNumber || '—'}</td>
                             <td>{c.mobileNumber}</td>
                             <td>
                               <input
@@ -268,16 +266,6 @@ function AdvancePaymentModal({
                     placeholder="Enter customer name"
                     value={newCustomer.name}
                     onChange={(e) => setNewCustomer((p) => ({ ...p, name: e.target.value }))}
-                  />
-                </div>
-                <div className="advance-field">
-                  <label className="advance-label">* Vehicle Number</label>
-                  <input
-                    type="text"
-                    className="advance-input"
-                    placeholder="Enter vehicle number"
-                    value={newCustomer.vehicleNumber}
-                    onChange={(e) => setNewCustomer((p) => ({ ...p, vehicleNumber: e.target.value }))}
                   />
                 </div>
                 <div className="advance-field">

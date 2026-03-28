@@ -33,7 +33,9 @@ function POSQuantityForm({ item, onAdd, onCancel }) {
             ×
           </button>
         </div>
-        <p className="pos-qty-form-item">{item?.name}</p>
+        <p className="pos-qty-form-item">
+          {item?.brandDto?.name ? `${item.name ?? ''} (${item.brandDto.name})` : (item?.name ?? '')}
+        </p>
         <form onSubmit={handleSubmit}>
           <input
             ref={inputRef}
@@ -47,7 +49,7 @@ function POSQuantityForm({ item, onAdd, onCancel }) {
           />
           <p className="pos-qty-form-hint">Press Enter to add</p>
           <button type="submit" className="pos-qty-form-btn">
-            Add to Cart
+            OK
           </button>
         </form>
       </div>

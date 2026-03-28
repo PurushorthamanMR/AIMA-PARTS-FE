@@ -8,7 +8,7 @@ function POSCategoriesSection({
   viewMode,
   items,
   selectedCategory,
-  selectedProduct,
+  selectedProductName,
   onCategoryClick,
   onProductClick,
   onBrandClick,
@@ -26,15 +26,22 @@ function POSCategoriesSection({
   const displayItems = getDisplayItems()
 
   const getItemLabel = (item) => {
-    if (viewMode === 'categories') return item.productCategoryName || item.name
-    if (viewMode === 'products') return item.name
-    if (viewMode === 'brands') return item.name
-    return item.name || ''
+    if (viewMode === 'categories') return item?.productCategoryName ?? item?.name ?? ''
+    if (viewMode === 'products') return typeof item === 'string' ? item : (item?.name ?? '')
+    if (viewMode === 'brands') return item?.brandDto?.name ? `${item.name ?? ''} - ${item.brandDto.name}` : (item?.name ?? '')
+    return ''
+  }
+
+  const getItemKey = (item) => {
+    if (viewMode === 'categories') return item?.id ?? item?.name
+    if (viewMode === 'products') return typeof item === 'string' ? `product-${item}` : (item?.id ?? item?.name)
+    if (viewMode === 'brands') return item?.id ?? item?.name
+    return String(item)
   }
 
   const handleItemClick = (item) => {
     if (viewMode === 'categories') onCategoryClick(item)
-    if (viewMode === 'products') onProductClick(item)
+    if (viewMode === 'products') onProductClick(typeof item === 'string' ? item : item?.name)
     if (viewMode === 'brands') onBrandClick(item)
   }
 
@@ -51,7 +58,7 @@ function POSCategoriesSection({
         {displayItems.length > 0 ? (
           displayItems.map((item) => (
             <button
-              key={item.id}
+              key={getItemKey(item)}
               type="button"
               className="pos-category-box"
               onClick={() => handleItemClick(item)}

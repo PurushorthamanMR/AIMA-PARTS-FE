@@ -18,7 +18,7 @@ function FinalPaymentModal({
   const [searchQuery, setSearchQuery] = useState('')
   const [customers, setCustomers] = useState([])
   const [selectedCustomer, setSelectedCustomer] = useState(null)
-  const [newCustomer, setNewCustomer] = useState({ name: '', vehicleNumber: '', mobileNumber: '' })
+  const [newCustomer, setNewCustomer] = useState({ name: '', mobileNumber: '' })
   const [loading, setLoading] = useState(false)
   const PAGE_SIZE = 5
   const [page, setPage] = useState(1)
@@ -30,7 +30,7 @@ function FinalPaymentModal({
       setCustomerType('existing')
       setSearchQuery('')
       setSelectedCustomer(null)
-      setNewCustomer({ name: '', vehicleNumber: '', mobileNumber: '' })
+      setNewCustomer({ name: '', mobileNumber: '' })
     }
   }, [isOpen])
 
@@ -124,9 +124,9 @@ function FinalPaymentModal({
                 }}
               >
                 <option value="">Select Payment Method</option>
-                {paymentMethods.map((pm) => (
+                {(Array.isArray(paymentMethods) ? paymentMethods : []).map((pm) => (
                   <option key={pm.id} value={pm.id}>
-                    {pm.type}
+                    {pm.type ?? pm.name ?? ''}
                   </option>
                 ))}
               </select>
@@ -179,7 +179,6 @@ function FinalPaymentModal({
                     <thead>
                       <tr>
                         <th>Name</th>
-                        <th>Vehicle Number</th>
                         <th>Mobile Number</th>
                         <th></th>
                       </tr>
@@ -187,13 +186,13 @@ function FinalPaymentModal({
                     <tbody>
                       {loading ? (
                         <tr>
-                          <td colSpan="4" className="final-loading">
+                          <td colSpan="3" className="final-loading">
                             Loading...
                           </td>
                         </tr>
                       ) : customers.length === 0 ? (
                         <tr>
-                          <td colSpan="4" className="final-empty">
+                          <td colSpan="3" className="final-empty">
                             No customers found
                           </td>
                         </tr>
@@ -203,7 +202,6 @@ function FinalPaymentModal({
                           .map((c) => (
                             <tr key={c.id}>
                               <td>{c.name}</td>
-                              <td>{c.vehicleNumber || '—'}</td>
                               <td>{c.mobileNumber}</td>
                               <td>
                                 <input
@@ -253,16 +251,6 @@ function FinalPaymentModal({
                     placeholder="Enter customer name"
                     value={newCustomer.name}
                     onChange={(e) => setNewCustomer((p) => ({ ...p, name: e.target.value }))}
-                  />
-                </div>
-                <div className="final-field">
-                  <label className="final-label">* Vehicle Number</label>
-                  <input
-                    type="text"
-                    className="final-input"
-                    placeholder="Enter vehicle number"
-                    value={newCustomer.vehicleNumber}
-                    onChange={(e) => setNewCustomer((p) => ({ ...p, vehicleNumber: e.target.value }))}
                   />
                 </div>
                 <div className="final-field">

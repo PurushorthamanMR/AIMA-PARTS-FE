@@ -29,11 +29,7 @@ function BillPrint() {
   }
 
   const subtotal = cartItems.reduce((sum, item) => sum + (item.pricePerUnit || 0) * (item.quantity || 1), 0)
-  const taxAmount = cartItems.reduce((sum, item) => {
-    const taxPct = (item.taxDto?.taxPercentage || 0) / 100
-    return sum + (item.pricePerUnit || 0) * (item.quantity || 1) * taxPct
-  }, 0)
-  const total = subtotal + taxAmount
+  const total = subtotal
 
   if (!transaction && !cartItems.length) {
     return null
@@ -86,30 +82,22 @@ function BillPrint() {
                 <td>{idx + 1}</td>
                 <td>{item.name}</td>
                 <td>{item.quantity || 1}</td>
-                <td>₹{(item.pricePerUnit || 0).toFixed(2)}</td>
-                <td>₹{((item.pricePerUnit || 0) * (item.quantity || 1)).toFixed(2)}</td>
+                <td>{(item.pricePerUnit || 0).toFixed(2)}</td>
+                <td>{((item.pricePerUnit || 0) * (item.quantity || 1)).toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
         <div className="bill-totals">
-          <div className="bill-total-row">
-            <span>Subtotal</span>
-            <span>₹{subtotal.toFixed(2)}</span>
-          </div>
-          <div className="bill-total-row">
-            <span>Tax</span>
-            <span>₹{taxAmount.toFixed(2)}</span>
-          </div>
           <div className="bill-total-row bill-total-final">
             <span>Total</span>
-            <span>₹{total.toFixed(2)}</span>
+            <span>{total.toFixed(2)}</span>
           </div>
           {advanceAmount < total && (
             <div className="bill-total-row">
               <span>Advance Paid</span>
-              <span>₹{advanceAmount.toFixed(2)}</span>
+              <span>{advanceAmount.toFixed(2)}</span>
             </div>
           )}
         </div>

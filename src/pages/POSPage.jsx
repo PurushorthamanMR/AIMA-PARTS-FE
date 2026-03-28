@@ -9,7 +9,8 @@ import POSCardSection from '../components/POSCardSection'
 import AdvancePaymentModal from '../components/AdvancePaymentModal'
 import FinalPaymentModal from '../components/FinalPaymentModal'
 import POSQuantityForm from '../components/POSQuantityForm'
-import { getCategories, getProductsByCategory, getPaymentMethods, saveTransaction } from '../api/posApi'
+import POSCartEditModal from '../components/POSCartEditModal'
+import { getCategories, getProductsByCategory, getPaymentMethods, savePending, saveComplete } from '../api/posApi'
 import {
   MOCK_CATEGORIES,
   MOCK_PRODUCTS_BY_CATEGORY,
@@ -38,13 +39,14 @@ function POSPage() {
   const [viewMode, setViewMode] = useState('categories')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState(null)
-  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [selectedProductName, setSelectedProductName] = useState(null)
   const [sectionIndex, setSectionIndex] = useState(0)
   const [cartItems, setCartItems] = useState([])
   const [selectedPendingTransaction, setSelectedPendingTransaction] = useState(null)
   const [showAdvanceModal, setShowAdvanceModal] = useState(false)
   const [showFinalModal, setShowFinalModal] = useState(false)
   const [brandForAdd, setBrandForAdd] = useState(null)
+  const [editingCartIndex, setEditingCartIndex] = useState(null)
 
   useEffect(() => {
     const load = async () => {
@@ -52,7 +54,8 @@ function POSPage() {
         setLoading(true)
         setError(null)
         const [cats, pms] = await Promise.all([getCategories(), getPaymentMethods()])
-        const filtered = Array.isArray(cats) ? cats.filter((c) => !EXCLUDED_CATEGORIES.includes(c.productCategoryName)) : []
+        const catName = (c) => c?.name ?? c?.productCategoryName
+        const filtered = Array.isArray(cats) ? cats.filter((c) => !EXCLUDED_CATEGORIES.includes(catName(c))) : []
         setCategories(filtered.length > 0 ? filtered : MOCK_CATEGORIES)
         setPaymentMethods(Array.isArray(pms) && pms.length > 0 ? pms : MOCK_PAYMENT_METHODS)
         setUseMockData(filtered.length === 0 || (Array.isArray(pms) && pms.length === 0))
@@ -68,64 +71,78 @@ function POSPage() {
   }, [])
 
   useEffect(() => {
-    if (!selectedCategory?.productCategoryName) return
+    const categoryKey = selectedCategory?.name ?? selectedCategory?.productCategoryName
+    if (!categoryKey) return
     const load = async () => {
       if (useMockData) {
-        const mock = MOCK_PRODUCTS_BY_CATEGORY[selectedCategory.productCategoryName] || []
+        const mock = MOCK_PRODUCTS_BY_CATEGORY[categoryKey] || []
         setProducts(mock)
         return
       }
+      if (!selectedCategory?.id) return
       try {
-        const res = await getProductsByCategory(selectedCategory.productCategoryName)
-        const content = res?.content || []
-        setProducts(content.length > 0 ? content : MOCK_PRODUCTS_BY_CATEGORY[selectedCategory.productCategoryName] || [])
+        const res = await getProductsByCategory(selectedCategory.id)
+        const list = Array.isArray(res) ? res : (res?.content || [])
+        setProducts(list.length > 0 ? list : MOCK_PRODUCTS_BY_CATEGORY[categoryKey] || [])
       } catch (err) {
-        const mock = MOCK_PRODUCTS_BY_CATEGORY[selectedCategory.productCategoryName] || []
+        const mock = MOCK_PRODUCTS_BY_CATEGORY[categoryKey] || []
         setProducts(mock)
       }
     }
     load()
-  }, [selectedCategory?.productCategoryName, useMockData])
+  }, [selectedCategory?.id, selectedCategory?.name, selectedCategory?.productCategoryName, useMockData])
+
+  const categoryDisplayName = (c) => c?.name ?? c?.productCategoryName ?? ''
 
   const filteredCategories = useMemo(() => {
     if (!searchQuery.trim()) return categories
     const q = searchQuery.toLowerCase()
-    return categories.filter((c) => (c.productCategoryName || '').toLowerCase().includes(q))
+    return categories.filter((c) => categoryDisplayName(c).toLowerCase().includes(q))
   }, [categories, searchQuery])
 
-  const filteredProducts = useMemo(() => {
-    if (!searchQuery.trim()) return products
+  const uniqueProductNames = useMemo(() => {
+    const names = [...new Set(products.map((p) => p?.name).filter(Boolean))]
+    return names
+  }, [products])
+
+  const filteredProductNames = useMemo(() => {
+    if (!searchQuery.trim()) return uniqueProductNames
     const q = searchQuery.toLowerCase()
-    return products.filter((p) => (p.name || '').toLowerCase().includes(q))
-  }, [products, searchQuery])
+    return uniqueProductNames.filter((name) => name.toLowerCase().includes(q))
+  }, [uniqueProductNames, searchQuery])
 
   const brands = useMemo(() => {
-    if (!selectedProduct?.name) return []
-    const mockBrands = MOCK_BRANDS_BY_PRODUCT[selectedProduct.name]
-    if (mockBrands && mockBrands.length > 0) return mockBrands
-    return products.filter((p) => (p.name || '').toLowerCase() === (selectedProduct.name || '').toLowerCase())
-  }, [products, selectedProduct?.name])
+    if (!selectedProductName) return []
+    if (useMockData) {
+      const mockBrands = MOCK_BRANDS_BY_PRODUCT[selectedProductName]
+      if (mockBrands && mockBrands.length > 0) return mockBrands
+    }
+    return products.filter((p) => (p.name || '').toLowerCase() === (selectedProductName || '').toLowerCase())
+  }, [products, selectedProductName, useMockData])
 
   const filteredBrands = useMemo(() => {
     if (!searchQuery.trim()) return brands
     const q = searchQuery.toLowerCase()
-    return brands.filter((b) => (b.name || '').toLowerCase().includes(q))
+    return brands.filter((b) => {
+      const label = b.brandDto?.name ? `${b.name} - ${b.brandDto.name}` : (b.name || '')
+      return label.toLowerCase().includes(q)
+    })
   }, [brands, searchQuery])
 
-  const displayItems = viewMode === 'categories' ? filteredCategories : viewMode === 'products' ? filteredProducts : filteredBrands
+  const displayItems = viewMode === 'categories' ? filteredCategories : viewMode === 'products' ? filteredProductNames : filteredBrands
   const totalSections = Math.ceil(displayItems.length / ITEMS_PER_SECTION) || 1
   const canGoNext = sectionIndex < totalSections - 1
   const canGoPrevious = sectionIndex > 0
 
   const handleCategoryClick = (cat) => {
     setSelectedCategory(cat)
-    setSelectedProduct(null)
+    setSelectedProductName(null)
     setViewMode('products')
     setSectionIndex(0)
   }
 
-  const handleProductClick = (prod) => {
-    setSelectedProduct(prod)
+  const handleProductClick = (productName) => {
+    setSelectedProductName(productName)
     setViewMode('brands')
     setSectionIndex(0)
   }
@@ -134,16 +151,34 @@ function POSPage() {
     setBrandForAdd(item)
   }
 
+  const normalizeCartItem = (item, qty = 1) => {
+    const name = item.brandDto?.name ? `${item.name || ''} (${item.brandDto.name})` : (item.name || '')
+    const pricePerUnit = item.price ?? item.pricePerUnit ?? 0
+    return {
+      id: item.id,
+      name,
+      pricePerUnit,
+      quantity: qty,
+      taxDto: item.taxDto ?? { taxPercentage: 0 },
+      productCategoryId: item.productCategoryDto?.id ?? item.productCategoryId,
+      productCategoryName: item.productCategoryDto?.name ?? item.productCategoryName,
+      productName: item.name ?? '',
+      brandId: item.brandDto?.id ?? item.brandId,
+      brandName: item.brandDto?.name ?? item.brandName
+    }
+  }
+
   const handleAddToCartWithQuantity = (itemWithQty) => {
+    const qty = itemWithQty.quantity || 1
+    const normalized = normalizeCartItem(itemWithQty, qty)
     setCartItems((prev) => {
-      const existing = prev.findIndex((i) => i.id === itemWithQty.id)
-      const qty = itemWithQty.quantity || 1
+      const existing = prev.findIndex((i) => i.id === normalized.id)
       if (existing >= 0) {
         const next = [...prev]
         next[existing] = { ...next[existing], quantity: (next[existing].quantity || 1) + qty }
         return next
       }
-      return [...prev, { ...itemWithQty, quantity: qty }]
+      return [...prev, normalized]
     })
     setBrandForAdd(null)
   }
@@ -162,11 +197,7 @@ function POSPage() {
 
   const buildTransactionPayload = (customer, paymentMethod, amount) => {
     const subtotal = cartItems.reduce((sum, item) => sum + (item.pricePerUnit || 0) * (item.quantity || 1), 0)
-    const taxAmount = cartItems.reduce((sum, item) => {
-      const taxPct = (item.taxDto?.taxPercentage || 0) / 100
-      return sum + (item.pricePerUnit || 0) * (item.quantity || 1) * taxPct
-    }, 0)
-    const totalAmount = subtotal + taxAmount
+    const totalAmount = subtotal
     const userId = parseInt(localStorage.getItem('userId'), 10)
     const paymentAmount = amount ?? totalAmount
     const isAdvance = amount != null && amount < totalAmount
@@ -177,6 +208,7 @@ function POSPage() {
       userDto: { id: userId || 1 },
       totalAmount,
       balanceAmount,
+      advancePaymentAmount: paymentAmount,
       status: 'Completed',
       transactionDetailsList: cartItems.map((item) => ({
         productDto: { id: item.id },
@@ -201,14 +233,9 @@ function POSPage() {
   const handleAdvanceFinish = async (payload, customer) => {
     setSaving(true)
     try {
-      const transaction = await saveTransaction(payload)
+      const transaction = await savePending(payload)
       const advanceAmount = payload.transactionPaymentMethod?.[0]?.amount || 0
-      const subtotal = cartItems.reduce((sum, item) => sum + (item.pricePerUnit || 0) * (item.quantity || 1), 0)
-      const taxAmount = cartItems.reduce((sum, item) => {
-        const taxPct = (item.taxDto?.taxPercentage || 0) / 100
-        return sum + (item.pricePerUnit || 0) * (item.quantity || 1) * taxPct
-      }, 0)
-      const totalAmount = subtotal + taxAmount
+      const totalAmount = cartItems.reduce((sum, item) => sum + (item.pricePerUnit || 0) * (item.quantity || 1), 0)
       const itemsForBill = [...cartItems]
       setCartItems([])
       setShowAdvanceModal(false)
@@ -236,13 +263,8 @@ function POSPage() {
   const handleFinalFinish = async (payload, customer) => {
     setSaving(true)
     try {
-      const transaction = await saveTransaction(payload)
-      const subtotal = cartItems.reduce((sum, item) => sum + (item.pricePerUnit || 0) * (item.quantity || 1), 0)
-      const taxAmount = cartItems.reduce((sum, item) => {
-        const taxPct = (item.taxDto?.taxPercentage || 0) / 100
-        return sum + (item.pricePerUnit || 0) * (item.quantity || 1) * taxPct
-      }, 0)
-      const totalAmount = subtotal + taxAmount
+      const transaction = await saveComplete(payload)
+      const totalAmount = cartItems.reduce((sum, item) => sum + (item.pricePerUnit || 0) * (item.quantity || 1), 0)
       const itemsForBill = [...cartItems]
       setCartItems([])
       setShowFinalModal(false)
@@ -270,13 +292,13 @@ function POSPage() {
 
   const handleBackToCategories = () => {
     setSelectedCategory(null)
-    setSelectedProduct(null)
+    setSelectedProductName(null)
     setViewMode('categories')
     setSectionIndex(0)
   }
 
   const handleBackToProducts = () => {
-    setSelectedProduct(null)
+    setSelectedProductName(null)
     setViewMode('products')
     setSectionIndex(0)
   }
@@ -329,16 +351,16 @@ function POSPage() {
                   </button>
                   <span className="pos-breadcrumb-sep">›</span>
                   {viewMode === 'products' ? (
-                    <span>{selectedCategory?.productCategoryName}</span>
+                    <span>{categoryDisplayName(selectedCategory)}</span>
                   ) : (
                     <button type="button" onClick={handleBackToProducts}>
-                      {selectedCategory?.productCategoryName}
+                      {categoryDisplayName(selectedCategory)}
                     </button>
                   )}
-                  {viewMode === 'brands' && (
+                  {viewMode === 'brands' && selectedProductName && (
                     <>
                       <span className="pos-breadcrumb-sep">›</span>
-                      <span>{selectedProduct?.name}</span>
+                      <span>{selectedProductName}</span>
                     </>
                   )}
                 </div>
@@ -347,7 +369,7 @@ function POSPage() {
                 viewMode={viewMode}
                 items={displayItems}
                 selectedCategory={selectedCategory}
-                selectedProduct={selectedProduct}
+                selectedProductName={selectedProductName}
                 onCategoryClick={handleCategoryClick}
                 onProductClick={handleProductClick}
                 onBrandClick={handleBrandClick}
@@ -367,13 +389,7 @@ function POSPage() {
               onClose={() => setShowAdvanceModal(false)}
               paymentMethods={paymentMethods}
               cartItems={cartItems}
-              totalAmount={
-                cartItems.reduce((sum, item) => sum + (item.pricePerUnit || 0) * (item.quantity || 1), 0) +
-                cartItems.reduce((sum, item) => {
-                  const taxPct = (item.taxDto?.taxPercentage || 0) / 100
-                  return sum + (item.pricePerUnit || 0) * (item.quantity || 1) * taxPct
-                }, 0)
-              }
+              totalAmount={cartItems.reduce((sum, item) => sum + (item.pricePerUnit || 0) * (item.quantity || 1), 0)}
               onFinish={handleAdvanceFinish}
               buildTransactionPayload={buildTransactionPayload}
             />
@@ -392,11 +408,32 @@ function POSPage() {
                 onCancel={() => setBrandForAdd(null)}
               />
             )}
+            {editingCartIndex !== null && cartItems[editingCartIndex] && (
+              <POSCartEditModal
+                item={cartItems[editingCartIndex]}
+                categories={categories}
+                getProductsByCategory={getProductsByCategory}
+                onSave={(newItem) => {
+                  setCartItems((prev) => {
+                    const next = [...prev]
+                    next[editingCartIndex] = newItem
+                    return next
+                  })
+                  setEditingCartIndex(null)
+                }}
+                onRemove={() => {
+                  handleRemoveItem(editingCartIndex)
+                  setEditingCartIndex(null)
+                }}
+                onCancel={() => setEditingCartIndex(null)}
+              />
+            )}
             <div className="pos-right-content">
               <POSCardSection
                 cartItems={cartItems}
                 onRemoveItem={handleRemoveItem}
                 onUpdateQuantity={handleUpdateQuantity}
+                onEditItem={(idx) => setEditingCartIndex(idx)}
                 onAdvancePayment={handleAdvancePayment}
                 onFinalPayment={handleFinalPayment}
               />

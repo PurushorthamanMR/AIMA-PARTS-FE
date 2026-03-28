@@ -6,8 +6,7 @@ import {
   faWrench, 
   faChartBar, 
   faChartLine, 
-  faHexagon, 
-  faTag,
+  faHexagon,
   faFileInvoice,
   faCreditCard,
   faMoneyBillWave,
@@ -42,7 +41,6 @@ function Sidebar({ onNavigate, currentPage, isCollapsed }) {
     if (path === '/brand' || path === '/brand/new') return 'Brand'
     if (path === '/low-stocks') return 'Low Stocks'
     if (path === '/category') return 'Category'
-    if (path === '/discount' || path === '/discount/new') return 'Discount'
     if (path === '/transaction') return 'Transaction'
     if (path === '/reports/daily') return 'Daily Report'
     if (path === '/reports/monthly') return 'Monthly Report'
@@ -111,14 +109,6 @@ function Sidebar({ onNavigate, currentPage, isCollapsed }) {
           >
             <FontAwesomeIcon icon={faHexagon} className="menu-icon" />
             {!isCollapsed && <span>Category</span>}
-          </li>
-          <li 
-            className={`sidebar-menu-item ${currentPage === 'Discount' ? 'active' : ''}`}
-            onClick={() => handleMenuClick('/discount')}
-            title="Discount"
-          >
-            <FontAwesomeIcon icon={faTag} className="menu-icon" />
-            {!isCollapsed && <span>Discount</span>}
           </li>
         </ul>
       </div>
